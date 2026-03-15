@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MacroScope — Global Economic Dashboard</title>
+  <meta name="description" content="Real-time macroeconomic data dashboard powered by the World Bank API. Tracks GDP growth, inflation, unemployment and more across G8 economies." />
+
+  <!-- Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ── LOADING OVERLAY ─────────────────────────────────────────────────── -->
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loader-hex"></div>
+  <p class="loader-text">Fetching global data&hellip;</p>
+</div>
+
+<!-- ── ERROR TOAST ────────────────────────────────────────────────────── -->
+<div id="errorToast" class="error-toast"></div>
+
+<!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">◆</div>
+    <span class="logo-text">Macro<span>Scope</span></span>
+  </div>
+  <div class="header-meta">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <span id="lastUpdated" class="last-updated">Connecting to World Bank API…</span>
+    <span class="source-tag">World Bank Open Data</span>
+  </div>
+</header>
+
+<!-- ── MAIN ───────────────────────────────────────────────────────────── -->
+<main>
+
+  <!-- Country Selector -->
+  <div class="section-title"><span class="country-label">ECONOMY</span></div>
+  <div id="countryBar" class="country-bar"></div>
+
+  <!-- Country heading -->
+  <div style="margin-bottom:20px;display:flex;align-items:center;gap:12px;">
+    <h1 id="countryHeader" style="font-family:var(--font-head);font-size:1.6rem;font-weight:800;letter-spacing:-.01em;">
+      🇺🇸 United States
+    </h1>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="section-title">Key Indicators</div>
+  <div class="kpi-grid">
+
+    <div id="kpiGdp" class="kpi-card teal" style="animation-delay:.05s">
+      <div class="kpi-label">GDP Growth Rate</div>
+      <div class="kpi-value">—%</div>
+      <div class="kpi-sub">
+        <span class="kpi-change neu">—</span>
+        <span class="kpi-year" style="color:var(--text-muted)"></span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="sparkGdp"></canvas></div>
+      <span class="kpi-icon">📈</span>
+    </div>
+
+    <div id="kpiInflation" class="kpi-card orange" style="animation-delay:.1s">
+      <div class="kpi-label">Inflation (CPI)</div>
+      <div class="kpi-value">—%</div>
+      <div class="kpi-sub">
+        <span class="kpi-change neu">—</span>
+        <span class="kpi-year" style="color:var(--text-muted)"></span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="sparkInflation"></canvas></div>
+      <span class="kpi-icon">💹</span>
+    </div>
+
+    <div id="kpiUnemployment" class="kpi-card blue" style="animation-delay:.15s">
+      <div class="kpi-label">Unemployment Rate</div>
+      <div class="kpi-value">—%</div>
+      <div class="kpi-sub">
+        <span class="kpi-change neu">—</span>
+        <span class="kpi-year" style="color:var(--text-muted)"></span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="sparkUnemployment"></canvas></div>
+      <span class="kpi-icon">👥</span>
+    </div>
+
+    <div id="kpiCurrentAccount" class="kpi-card yellow" style="animation-delay:.2s">
+      <div class="kpi-label">Current Account</div>
+      <div class="kpi-value">—%</div>
+      <div class="kpi-sub">
+        <span class="kpi-change neu">—</span>
+        <span class="kpi-year" style="color:var(--text-muted)"></span>
+      </div>
+      <div class="kpi-sparkline"><canvas id="sparkCurrentAccount"></canvas></div>
+      <span class="kpi-icon">⚖️</span>
+    </div>
+
+  </div>
+
+  <!-- Time-series Charts -->
+  <div class="section-title" style="animation-delay:.25s">Historical Trends</div>
+
+  <div class="chart-row">
+    <div class="chart-card" style="animation-delay:.3s">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">GDP Growth Rate</div>
+          <div class="chart-subtitle">Annual % change in real GDP · World Bank NY.GDP.MKTP.KD.ZG</div>
+        </div>
+        <span class="chart-badge">25 YRS</span>
+      </div>
+      <div class="chart-canvas-wrap tall"><canvas id="chartGdp"></canvas></div>
+    </div>
+
+    <div class="chart-card" style="animation-delay:.35s">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Current Account</div>
+          <div class="chart-subtitle">% of GDP · Positive = surplus</div>
+        </div>
+        <span class="chart-badge">25 YRS</span>
+      </div>
+      <div class="chart-canvas-wrap tall"><canvas id="chartCurrentAccount"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-row-2">
+    <div class="chart-card" style="animation-delay:.4s">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Inflation (CPI)</div>
+          <div class="chart-subtitle">Consumer Price Index, annual % · FP.CPI.TOTL.ZG</div>
+        </div>
+        <span class="chart-badge">25 YRS</span>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="chartInflation"></canvas></div>
+    </div>
+
+    <div class="chart-card" style="animation-delay:.45s">
+      <div class="chart-header">
+        <div>
+          <div class="chart-title">Unemployment Rate</div>
+          <div class="chart-subtitle">% of total labour force · SL.UEM.TOTL.ZS</div>
+        </div>
+        <span class="chart-badge">25 YRS</span>
+      </div>
+      <div class="chart-canvas-wrap"><canvas id="chartUnemployment"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Cross-country comparison -->
+  <div class="section-title">Global Comparison</div>
+  <div class="chart-card" style="animation-delay:.5s;margin-bottom:16px;">
+    <div class="chart-header">
+      <div>
+        <div class="chart-title">G8 Economies — Side by Side</div>
+        <div class="chart-subtitle">Latest available values across all tracked countries</div>
+      </div>
+      <div id="compareTabGroup" class="tab-group"></div>
+    </div>
+    <div class="chart-canvas-wrap" style="height:240px"><canvas id="chartCompare"></canvas></div>
+  </div>
+
+  <!-- Comparison Table -->
+  <div class="section-title">Rankings Table</div>
+  <div class="table-card" style="animation-delay:.55s">
+    <div class="table-header-row">
+      <div>
+        <div class="chart-title">Country Comparison</div>
+        <div class="chart-subtitle">Ranked by GDP Growth · All latest available data</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Country</th>
+            <th style="text-align:right">GDP Growth</th>
+            <th style="text-align:right">Inflation</th>
+            <th style="text-align:right">Unemployment</th>
+            <th style="text-align:right">Curr. Account</th>
+            <th style="text-align:right">Gov. Debt</th>
+            <th>GDP Bar</th>
+          </tr>
+        </thead>
+        <tbody id="compTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Info Cards Row -->
+  <div class="section-title">Deep Dive</div>
+  <div class="info-grid">
+
+    <div class="info-card" style="animation-delay:.6s">
+      <div class="info-card-title">
+        <span class="dot" style="background:var(--teal)"></span>
+        Macro Health Score
+      </div>
+      <div id="macroHealth">
+        <div class="stat-row"><span class="stat-name">Loading…</span><span class="stat-val">—</span></div>
+      </div>
+    </div>
+
+    <div class="info-card" style="animation-delay:.65s">
+      <div class="info-card-title">
+        <span class="dot" style="background:var(--blue)"></span>
+        G8 Rankings (This Country)
+      </div>
+      <div id="worldRanking">
+        <div class="stat-row"><span class="stat-name">Loading…</span><span class="stat-val">—</span></div>
+      </div>
+    </div>
+
+    <div class="info-card" style="animation-delay:.7s">
+      <div class="info-card-title">
+        <span class="dot" style="background:var(--yellow)"></span>
+        Data Vintage (Latest Year)
+      </div>
+      <div id="dataRecency">
+        <div class="stat-row"><span class="stat-name">Loading…</span><span class="stat-val">—</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<!-- ── FOOTER ─────────────────────────────────────────────────────────── -->
+<footer>
+  MacroScope &nbsp;·&nbsp;
+  Data: <a href="https://data.worldbank.org" target="_blank">World Bank Open Data API</a>
+  &nbsp;·&nbsp; Free, no API key required &nbsp;·&nbsp;
+  Built with Chart.js &nbsp;·&nbsp; MIT License
+</footer>
+
+<script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
