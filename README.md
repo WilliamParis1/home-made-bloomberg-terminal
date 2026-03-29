@@ -1,17 +1,17 @@
-# 📊 MacroScope — Global Macroeconomic Dashboard
+# MacroScope — Global Macroeconomic Dashboard
 
 > A sleek, data-driven dashboard for analysing macroeconomic indicators across G8 economies using **live World Bank API data** — no API key required.
 
 ![MacroScope Dashboard](https://img.shields.io/badge/data-World%20Bank%20API-00d4a8?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
-![Vanilla JS](https://img.shields.io/badge/built%20with-Vanilla%20JS%20%2B%20Chart.js-yellow?style=flat-square)
+![Python + Flask](https://img.shields.io/badge/built%20with-Python%20%2B%20Flask%20%2B%20Chart.js-yellow?style=flat-square)
 ![No API Key](https://img.shields.io/badge/API%20key-not%20required-brightgreen?style=flat-square)
 
 ---
 
-## 🌍 Features
+## Features
 
-- **Real-time data** — fetched live from the [World Bank Open Data API](https://datahelpdesk.worldbank.org/knowledgebase/articles/898581) on every page load
+- **Real-time data** — fetched live from the [World Bank Open Data API](https://datahelpdesk.worldbank.org/knowledgebase/articles/898581)
 - **8 countries tracked** — USA, China, Germany, Japan, UK, India, France, Brazil
 - **8 macroeconomic indicators** per country:
   - GDP Growth Rate (annual %)
@@ -24,111 +24,99 @@
   - FDI Inflows (% of GDP)
 - **Interactive charts** — 25-year time series with Chart.js
 - **Cross-country comparison** — ranked bar charts with tab switcher
-- **Sortable rankings table** — all countries side by side
+- **Rankings table** — all countries side by side
 - **Macro Health Score** — composite indicator computed from key metrics
-- **Zero dependencies** — pure ES modules, no bundler, no framework
+- **Python Flask backend** — proxies World Bank API, serves data via REST endpoints
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Clone the repo
-git clone https://github.com/YOUR_USERNAME/macro-dashboard.git
-cd macro-dashboard
+git clone https://github.com/YOUR_USERNAME/home-made-bloomberg-terminal.git
+cd home-made-bloomberg-terminal
 
-# Serve locally (any static server works)
-npx serve .
-# or
-python -m http.server 8080
-# then open http://localhost:8080
-```
+# Install dependencies
+pip install -r requirements.txt
 
-> ⚠️ Must be served over HTTP(S) — opening `index.html` directly in a browser blocks ES module imports.
+# Run the app
+python app.py
 
----
-
-## 📁 Project Structure
-
-```
-macro-dashboard/
-├── index.html          # App shell & layout
-├── css/
-│   └── style.css       # Design system & Bloomberg Terminal aesthetic
-├── js/
-│   ├── api.js          # World Bank API wrapper (fetch + parsing)
-│   ├── charts.js       # Chart.js rendering helpers
-│   └── dashboard.js    # App state, event handling, orchestration
-└── README.md
+# Open http://localhost:5000
 ```
 
 ---
 
-## 🔌 API — World Bank Open Data
+## Project Structure
 
-All data comes from the **World Bank Open Data API v2**, which is:
-
-- ✅ Completely **free**
-- ✅ No API key needed
-- ✅ CORS-enabled (works from browser)
-- ✅ Data updated **annually**
-
-### Example Endpoints Used
-
-| Indicator         | Endpoint |
-|-------------------|---------|
-| GDP Growth        | `api.worldbank.org/v2/country/US/indicator/NY.GDP.MKTP.KD.ZG` |
-| CPI Inflation     | `api.worldbank.org/v2/country/US/indicator/FP.CPI.TOTL.ZG` |
-| Unemployment      | `api.worldbank.org/v2/country/US/indicator/SL.UEM.TOTL.ZS` |
-| Current Account   | `api.worldbank.org/v2/country/US/indicator/BN.CAB.XOKA.GD.ZS` |
-| Gov. Debt         | `api.worldbank.org/v2/country/US/indicator/GC.DOD.TOTL.GD.ZS` |
-
-Full indicator list: [World Bank Indicators](https://data.worldbank.org/indicator)
+```
+home-made-bloomberg-terminal/
+├── app.py                  # Flask backend — API routes & World Bank proxy
+├── requirements.txt        # Python dependencies
+├── templates/
+│   └── index.html          # Jinja2 template — app shell & layout
+└── static/
+    ├── css/
+    │   └── style.css       # Design system & Bloomberg Terminal aesthetic
+    └── js/
+        ├── charts.js       # Chart.js rendering helpers
+        └── dashboard.js    # Frontend state, event handling, orchestration
+```
 
 ---
 
-## 📈 Macro Health Score
+## API Endpoints
 
-The **Macro Health Score** (0–100) is a composite metric computed as:
+The Flask backend exposes these REST endpoints:
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /` | Serves the dashboard HTML |
+| `GET /api/countries` | Returns the list of tracked countries |
+| `GET /api/indicators` | Returns the list of tracked indicators |
+| `GET /api/snapshot/<country>` | Latest values for all indicators (one country) |
+| `GET /api/timeseries/<country>` | 25-year time series for main indicators |
+| `GET /api/crosscountry/<indicator>` | Latest value across all countries |
+
+All data is fetched from the **World Bank Open Data API v2**, which is free and requires no API key.
+
+---
+
+## Macro Health Score
+
+The **Macro Health Score** (0-100) is a composite metric computed as:
 
 ```
 Score = 50
-      + min(25,  GDP_growth  × 3)      // rewards growth
-      − min(20,  |inflation − 2| × 4)  // penalises deviation from 2% target
-      − min(15,  unemployment × 1.5)   // penalises high unemployment
+      + min(25,  GDP_growth  x 3)      // rewards growth
+      - min(20,  |inflation - 2| x 4)  // penalises deviation from 2% target
+      - min(15,  unemployment x 1.5)   // penalises high unemployment
 ```
 
-Thresholds: **Strong** ≥ 70 · **Moderate** ≥ 50 · **Weak** ≥ 30 · **Fragile** < 30
+Thresholds: **Strong** >= 70 · **Moderate** >= 50 · **Weak** >= 30 · **Fragile** < 30
 
 ---
 
-## 🛠 Extending the Dashboard
+## Extending the Dashboard
 
 ### Add a New Country
 
-In `js/api.js`, add an entry to `COUNTRIES`:
-```js
-ZA: { name: 'South Africa', flag: '🇿🇦', code: 'ZA' },
+In `app.py`, add an entry to `COUNTRIES`:
+```python
+"ZA": {"name": "South Africa", "flag": "\U0001f1ff\U0001f1e6", "code": "ZA"},
 ```
 
 ### Add a New Indicator
 
-In `js/api.js`, add an entry to `INDICATORS`:
-```js
-povertyRate: { code: 'SI.POV.DDAY', label: 'Poverty Rate (%)', unit: '%' },
+In `app.py`, add an entry to `INDICATORS`:
+```python
+"povertyRate": {"code": "SI.POV.DDAY", "label": "Poverty Rate (%)", "unit": "%"},
 ```
-Then call `fetchIndicator(countryCode, INDICATORS.povertyRate.code)` as needed.
-
-### Use Another Free API
-
-The modular `api.js` makes it easy to swap in:
-- [FRED API](https://fred.stlouisfed.org/docs/api/fred/) (US Federal Reserve — free key required)
-- [IMF Data API](https://datahelp.imf.org/knowledgebase/articles/667681) (no key)
-- [OECD.Stat API](https://stats.oecd.org/SDMX-JSON/data/) (no key)
 
 ---
 
-## 🎨 Design
+## Design
 
 The UI is inspired by professional financial terminals (Bloomberg, Refinitiv) with:
 
@@ -141,21 +129,9 @@ The UI is inspired by professional financial terminals (Bloomberg, Refinitiv) wi
 
 ---
 
-## 📚 Academic Context
+## License
 
-This project demonstrates:
-
-1. **API integration** — RESTful JSON consumption, async/await, error handling
-2. **Data visualisation** — time series, bar comparisons, sparklines
-3. **Macroeconomic analysis** — GDP, inflation, unemployment, BoP, fiscal metrics
-4. **Software architecture** — separation of concerns (api / charts / dashboard)
-5. **Performance** — client-side data caching, parallel fetch with `Promise.all`
-
----
-
-## 📄 License
-
-MIT © 2024 — free to use, modify and distribute.
+MIT — free to use, modify and distribute.
 
 ---
 
